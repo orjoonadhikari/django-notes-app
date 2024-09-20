@@ -30,7 +30,7 @@ pipeline {
                 GIT_USER_NAME = "orjoonadhikari"
             }
             steps {
-                withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]){
                 echo "deploying the app in docker"
                 sh '''
                     git config user.email "orjoonadhikari19@gmail.com"
@@ -41,7 +41,9 @@ pipeline {
                     git commit -m "Update  image to version ${BUILD_NUMBER}"
                     git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                     docker-compose down && docker-compose up -d
-                    sed -i "s/${BUILD_NUMBER}tag/g" docker-compose.yml
+                    sed -i "s/${BUILD_NUMBER}/tag/g" docker-compose.yml
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    
                 '''
                 }
             }
