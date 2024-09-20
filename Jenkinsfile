@@ -1,44 +1,49 @@
 pipeline {
-    
-    agent { 
-        node{
-            label "dev"
-            
-        }
-    }
-    
+    agent any
+
     stages{
-        stage("Clone Code"){
-            steps{
-                git url: "https://github.com/LondheShubham153/django-notes-app.git", branch: "main"
-                echo "Aaj toh LinkedIn Post bannta hai boss"
+        stage("code"){
+            steps {
+                echo "building the code"
+                git url:"https://github.com/orjoonadhikari/django-notes-app.git", branch: "main"
             }
         }
-        stage("Build & Test"){
-            steps{
-                sh "docker build . -t notes-app-jenkins:latest"
+        stage("image build"){
+            steps {
+                echo "Building the code"
+                sh 'docker build -t django-note-app .'
             }
         }
-        stage("Push to DockerHub"){
-            steps{
-                withCredentials(
-                    [usernamePassword(
-                        credentialsId:"dockerCreds",
-                        passwordVariable:"dockerHubPass", 
-                        usernameVariable:"dockerHubUser"
-                        )
-                    ]
-                ){
-                sh "docker image tag notes-app-jenkins:latest ${env.dockerHubUser}/notes-app-jenkins:latest"
-                sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                sh "docker push ${env.dockerHubUser}/notes-app-jenkins:latest"
+        stage("push to dockerhub"){
+            steps {
+                echo "Pushing to docker hub"
+                withCredentials([usernamePassword(credentialsId:"dockerhub",passwordVariable:"dockerHubpass",usernameVariable:"dockerHubUser")]){
+                sh "docker login -u ${dockerHubUser} -p ${dockerHubpass}"
+                sh 'docker tag django-note-app ${dockerHubUser}/django-note-app:${BUILD_ID}'
+                sh 'docker push ${dockerHubUser}/django-note-app:${BUILD_ID}'
                 }
             }
         }
-        
-        stage("Deploy"){
-            steps{
-                sh "docker compose up -d"
+        stage("deploy"){
+            environment {
+                GIT_REPO_NAME = "django-notes-app"
+                GIT_USER_NAME = "orjoonadhikari"
+            }
+            steps {
+                withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                echo "deploying the app in docker"
+                sh '''
+                    git config user.email "orjoonadhikari19@gmail.com"
+                    git config user.name "Arjun Adhikari"
+                    BUILD_NUMBER=${BUILD_NUMBER}
+                    sed -i "s/tag/${BUILD_NUMBER}/g" docker-compose.yml
+                    git add docker-compose.yml
+                    git commit -m "Update  image to version ${BUILD_NUMBER}"
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    docker-compose down && docker-compose up -d
+                    sed -i "s/${BUILD_NUMBER}tag/g" docker-compose.yml
+                '''
+                }
             }
         }
     }
