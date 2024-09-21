@@ -36,7 +36,7 @@ pipeline {
                     git config user.email "orjoonadhikari19@gmail.com"
                     git config user.name "Arjun Adhikari"
                     BUILD_NUMBER=${BUILD_NUMBER}
-                    sed -i "s/:.*$/:${BUILD_NUMBER}/g" docker-compose.yml
+                    sed -i "s/:[0-9]\+/:${BUILD_NUMBER}/g" docker-compose.yml
                     git add docker-compose.yml
                     git commit -m "Update  image to version ${BUILD_NUMBER}"
                     git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
