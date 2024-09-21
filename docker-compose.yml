@@ -1,6 +1,6 @@
 version : "3.3"
 services :
   web :
-     image : arjunadhikari19/django-note-app:3
+     image : arjunadhikari19/django-note-app:4
      ports :
-         - "8000:3"
+         - "8000:4"
